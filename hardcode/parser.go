@@ -15,11 +15,14 @@ func main() {
 	if len(os.Args) < 2 {
 		log.Fatal("Please specify a go files to parse")
 	}
-	fmt.Println("package resources\n")
-	fmt.Println(`import "require"`)
+	packageName := "resources"
+	fmt.Printf("package %s\n\n", packageName)
+	fmt.Println(`import "github.com/bunyk/require"`)
+	fmt.Println("\nfunc init() {")
 	for _, filename := range os.Args[1:] {
 		processFile(filename)
 	}
+	fmt.Println("}")
 }
 
 func processFile(filename string) {
