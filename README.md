@@ -2,8 +2,18 @@ The purpose of this module is to allow you to "require" text files,
 so they could be hardcoded in single executable and all filesystem access
 except of course process loading happens during the build. 
 
+# Installation
+```
+go get github.com/bunyk/require
+go install github.com/bunyk/require/hardcode
+```
+
 # Usage
 
+Write `require.File("file.txt")` anywhere in your code to get contents of given file as a string. Then you run 
+`hardcode` giving it a list of files to process, and it will give you go code to include in your program as output.
+
+# Tutorial
 Say you have file with some famous quotes, and you want to build
 a small fortune program that prints one of them randomly:
 
