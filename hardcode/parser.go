@@ -7,19 +7,33 @@ import (
 	"go/token"
 	"io/ioutil"
 	"log"
-	"os"
 	"strconv"
+
+	"github.com/docopt/docopt-go"
 )
 
+var usage string = `Program to hardcode file contents into your go code.
+
+Usage:
+  hardcode [--package=<package>] <filename>...
+  hardcode -h | --help
+
+Options:
+  -h --help     Show this screen.
+  --package=<package>    Package name for file [default: resources]
+`
+
 func main() {
-	if len(os.Args) < 2 {
-		log.Fatal("Please specify a go files to parse")
+	arguments, err := docopt.ParseDoc(usage)
+	if err != nil {
+		fmt.Println(err)
+		fmt.Println(usage)
+		return
 	}
-	packageName := "resources"
-	fmt.Printf("package %s\n\n", packageName)
+	fmt.Printf("package %s\n\n", arguments["--package"])
 	fmt.Println(`import "github.com/bunyk/require"`)
 	fmt.Println("\nfunc init() {")
-	for _, filename := range os.Args[1:] {
+	for _, filename := range arguments["<filename>"].([]string) {
 		processFile(filename)
 	}
 	fmt.Println("}")
