@@ -30,47 +30,55 @@ func main() {
 		fmt.Println(usage)
 		return
 	}
+	visitor := Visitor{
+		FileSet: token.NewFileSet(),
+		Files: make(map[string]string),
+		FileSequences: make(map[string][]string),
+	}
+	for _, filename := range arguments["<filename>"].([]string) {
+		processFile(filename, readFile(filename), visitor)
+	}
+
 	fmt.Printf("package %s\n\n", arguments["--package"])
 	fmt.Println(`import "github.com/bunyk/require"`)
 	fmt.Println("\nfunc init() {")
-	for _, filename := range arguments["<filename>"].([]string) {
-		processFile(filename)
-	}
 	fmt.Println("}")
 }
 
-func processFile(filename string) {
-	src := readFile(filename)
-	fset := token.NewFileSet() // positions are relative to fset
-	f, err := parser.ParseFile(fset, filename, src, 0)
+func processFile(name, contents string, visitor *Visitor) {
+	f, err := parser.ParseFile(visitor.FileSet, name, contents, 0)
 	if err != nil {
 		log.Fatalf("Parse error: %s", err.Error())
 	}
-
-	ast.Walk(Visitor{
-		FileSet: fset,
-	}, f)
+	ast.Walk(*visitor, f)
 }
 
 type Visitor struct {
-	FileSet *token.FileSet
+	FileSet *token.FileSet // Code to visit
+	Files map[string]string // require.File occurences
+	FileSequences map[string][]string // require.FileSequence occurences
 }
 
-func (v Visitor) Error(pos token.Pos, msg string) {
-	log.Fatalf("Error at %s: %s", v.FileSet.Position(pos), msg)
+// Generate error in some part of file
+func (v Visitor) Error(pos token.Pos, msg string, args ...interface{}) {
+	log.Fatalf(
+		"Error at %s: %s",
+		v.FileSet.Position(pos),
+		fmt.Sprintf(msg, args...),
+	)
 }
 
 func (v Visitor) Visit(node ast.Node) ast.Visitor {
-	call := isRequireFile(node)
+	call, funcName := isRequireFileOrSequence(node)
 	if call == nil {
 		return v // Not yet found what we want, need to walk deeper
 	}
 	if len(call.Args) != 1 {
-		v.Error(call.Lparen, "require.File() call requires one argument")
+		v.Error(call.Lparen, "require.%s() call requires one argument", funcName)
 	}
 	arg, ok := call.Args[0].(*ast.BasicLit)
 	if !ok {
-		v.Error(call.Lparen, "require.File() call should take constant argument")
+		v.Error(call.Lparen, "require.File() call should take constant argument", funcName)
 	}
 	if arg.Kind != token.STRING {
 		v.Error(arg.ValuePos, "require.File() call should take string argument")
@@ -83,32 +91,36 @@ func (v Visitor) Visit(node ast.Node) ast.Visitor {
 	return nil // found what we want, do not walk deeper
 }
 
-// checks if syntax tree node is require.File() call, and if not returns nil,
-// othwerwise returns the call
-func isRequireFile(node ast.Node) *ast.CallExpr {
+// checks if syntax tree node is require.File() or require.FileSequence() call,
+// and if not returns nil, othwerwise returns the call and the function name
+func isRequireFileOrSequence(node ast.Node) (*ast.CallExpr, string) {
 	// We want find all function calls
 	call, ok := node.(*ast.CallExpr)
 	if !ok { // Not what we are looking for
-		return nil
+		return nil, ""
 	}
 	// We want function to be selected from package
 	selector, ok := call.Fun.(*ast.SelectorExpr)
 	if !ok { // not what we are looking for
-		return nil
+		return nil, ""
 	}
-	if isIdentifierNamed(selector.X, "require") &&
-		isIdentifierNamed(selector.Sel, "File") {
-		return call
+	if getIdentifierName(selector.X) != "require" {
+		return nil, ""
 	}
-	return nil
+	funcName := getIdentifierName(selector.Sel)
+	if (funcName == "File" || funcName == "FileSequence") {
+		return call, funcName
+	}
+	return nil, ""
 }
 
-func isIdentifierNamed(node ast.Node, name string) bool {
+// Return identifier name, or empty string if that is not identifier
+func getIdentifierName(node ast.Node) string {
 	ident, ok := node.(*ast.Ident)
 	if !ok {
-		return false
+		return ""
 	}
-	return ident.Name == name
+	return ident.Name
 }
 
 func readFile(filename string) string {

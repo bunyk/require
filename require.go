@@ -1,16 +1,14 @@
 package require
 
-var files map[string]string
+var Files map[string]string
+var FileSequences map[string][]string
 
 // File receives filename as parameter and returns contents of that file as a string
 func File(filename string) string {
-	return files[filename]
+	return Files[filename]
 }
 
-// SetFile sets contents for the file by name. Calls to this should be generated
-func SetFile(filename, content string) {
-	if files == nil {
-		files = make(map[string]string)
-	}
-	files[filename] = content
+// File sequence receives file name pattern (glob) as parameter and returns slice of files for that pattern
+func FileSequence(namePattern string) []string {
+	return FileSequences[filename]
 }
