@@ -36,7 +36,7 @@ func main() {
 		FileSequences: make(map[string][]string),
 	}
 	for _, filename := range arguments["<filename>"].([]string) {
-		processFile(filename, readFile(filename), visitor)
+		processFile(filename, readFile(filename), &visitor)
 	}
 
 	fmt.Printf("package %s\n\n", arguments["--package"])
@@ -78,16 +78,22 @@ func (v Visitor) Visit(node ast.Node) ast.Visitor {
 	}
 	arg, ok := call.Args[0].(*ast.BasicLit)
 	if !ok {
-		v.Error(call.Lparen, "require.File() call should take constant argument", funcName)
+		v.Error(call.Lparen, "require.%s() call should take constant argument", funcName)
 	}
 	if arg.Kind != token.STRING {
-		v.Error(arg.ValuePos, "require.File() call should take string argument")
+		v.Error(arg.ValuePos, "require.%s() call should take string argument", funcName)
 	}
 	filename, err := strconv.Unquote(arg.Value)
 	if err != nil {
 		v.Error(arg.ValuePos, err.Error())
 	}
-	fmt.Printf("\trequire.SetFile(%#v, %#v)\n", filename, readFile(filename))
+	if funcName == "File" {
+		v.Files[filename] = readFile(filename)
+		return nil
+	}
+	if funcName == "FileSequence" {
+		fmt.Println("TODO: Should load following files:", filename)
+	}
 	return nil // found what we want, do not walk deeper
 }
 
