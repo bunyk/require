@@ -43,8 +43,8 @@ func main() {
 	fmt.Printf("package %s\n\n", arguments["--package"])
 	fmt.Println(`import "github.com/bunyk/require"`)
 	fmt.Println("\nfunc init() {")
-	fmt.Printf("require.Files = %#v\n", visitor.Files)
-	fmt.Printf("require.FileSequences = %#v\n", visitor.FileSequences)
+	fmt.Printf("\trequire.Files = %#v\n", visitor.Files)
+	fmt.Printf("\trequire.FileSequences = %#v\n", visitor.FileSequences)
 	fmt.Println("}")
 }
 
