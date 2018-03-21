@@ -7,6 +7,7 @@ import (
 	"go/token"
 	"io/ioutil"
 	"log"
+	"path/filepath"
 	"strconv"
 
 	"github.com/docopt/docopt-go"
@@ -42,6 +43,8 @@ func main() {
 	fmt.Printf("package %s\n\n", arguments["--package"])
 	fmt.Println(`import "github.com/bunyk/require"`)
 	fmt.Println("\nfunc init() {")
+	fmt.Printf("require.Files = %#v\n", visitor.Files)
+	fmt.Printf("require.FileSequences = %#v\n", visitor.FileSequences)
 	fmt.Println("}")
 }
 
@@ -92,7 +95,18 @@ func (v Visitor) Visit(node ast.Node) ast.Visitor {
 		return nil
 	}
 	if funcName == "FileSequence" {
-		fmt.Println("TODO: Should load following files:", filename)
+		matches, err := filepath.Glob(filename)
+		if err != nil {
+			v.Error(arg.ValuePos, err.Error())
+		}
+		if matches == nil {
+			v.Error(arg.ValuePos, "No files matching " + filename)
+		}
+		contents := make([]string, len(matches))
+		for i, match := range matches {
+			contents[i] = readFile(match)
+		}
+		v.FileSequences[filename] = contents
 	}
 	return nil // found what we want, do not walk deeper
 }
