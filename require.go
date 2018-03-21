@@ -11,5 +11,5 @@ func File(filename string) string {
 // File sequence receives file name pattern as parameter and returns slice of files
 // that match that pattern. Pattern syntax is described here: https://golang.org/pkg/path/filepath/#Match
 func FileSequence(namePattern string) []string {
-	return FileSequences[filename]
+	return FileSequences[namePattern]
 }
