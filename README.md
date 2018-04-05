@@ -1,3 +1,5 @@
+[![GoDoc](https://godoc.org/github.com/bunyk/require?status.svg)](https://godoc.org/github.com/bunyk/require)
+
 The purpose of this module is to allow you to "require" text files,
 so they could be hardcoded in single executable and all filesystem access
 except of course process loading happens during the build. 
