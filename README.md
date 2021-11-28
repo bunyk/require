@@ -1,5 +1,11 @@
 [![GoDoc](https://godoc.org/github.com/bunyk/require?status.svg)](https://godoc.org/github.com/bunyk/require)
 
+**This package is obsolete.** Since Go 1.16 you could use [`embed`](https://pkg.go.dev/embed) from standard library for the same purpose.
+
+[See my blog post about this package and embed](http://bunyk.github.io/posts/go_embed)
+
+----
+
 The purpose of this module is to allow you to "require" text files,
 so they could be hardcoded in single executable and all filesystem access
 except of course process loading happens during the build. 
